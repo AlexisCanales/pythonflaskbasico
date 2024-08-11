@@ -1,0 +1,159 @@
+{% extends './layout.html' %}
+
+{% block title %}{{data2.titulo}}{% endblock %}
+
+{% block body %}
+<nav class="navbar navbar-expand-lg bg-light">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarText">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a href="{{url_for('menu')}}" class="navbar-brand">Menu</a>
+        </li>
+        <li class="nav-item">
+          <a href="{{url_for('listar_usuario')}}" class="navbar-brand">Usuarios</a>
+        </li>
+        <li class="nav-item">
+          <a href="{{url_for('listar_productos')}}" class="navbar-brand">Productos</a>
+        </li>
+      </ul>
+      <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} </label>
+      <a href="{{url_for('logout')}}" class="navbar-brand text-decoration-none"> Salir <i class="fa-solid fa-rectangle-xmark"></i></a>
+    </div>
+  </div>
+</nav>
+</br></br>
+<div class="text-center">
+    <h1>{{data2.Bienvenida}}</h1>
+</div>
+
+</br></br>
+
+<div class="container">
+  <div class="row">
+    <div class="card shadow col-md-7">
+      <div class="card-body">
+        <form action="/productos" method="POST" class="row g-3">
+          <div class="col-auto">
+            <label for="staticEmail2" class="visually-hidden">Producto</label>
+            <input type="text" readonly class="form-control-plaintext" id="staticEmail2" value="Buscar por producto:">
+          </div>
+          <div class="col-auto">
+            <label for="inputPassword2" class="visually-hidden">Password</label>
+            <input type="text" class="form-control" id="txtNombre" name="txtNombre" placeholder="nombre">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-3">Buscar</button>
+          </div>
+          <div class="col-auto">
+            <a href="{{url_for('listar_productos')}}" class="btn btn-primary mb-3">Deshacer filtro</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="col-md-1"></div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert {{ category }} alert-dismissible fade show col-md-3" role="alert">
+        <strong>{{ message }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+        {% endfor %}
+    {% endif %}
+  {% endwith %}
+  </div>
+</br></br>
+
+<div class="container">
+  <div class="row">
+    <div class="card shadow col-md-3">
+      <div class="card-body">
+        <form method="post" action="/guardar_producto">
+          <div class="mb-3">
+            <label for="exampleFormControlInput1" class="form-label textwhite">producto:</label>
+            <input type="text" class="form-control" id="txtProducto" name="txtProducto" placeholder="Producto" required="">
+          </div>
+          <div class="mb-3">
+            <label for="exampleFormControlInput1" class="form-label textwhite">tipo:</label>
+            <select name="cboTipo" id="cboTipo" class="form-select">
+              <option selected>Seleccione</option>
+              {% for dcbo in datacbo %}
+              <option value="{{dcbo.codigoTipo}}">{{dcbo.nombre}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <div class="d-grid gap-2">
+              <input type="submit" id="btnenviar" name="btnenviar" value="Guardar" class="btn btn-lg btn-primary">
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-1"></div>
+
+    <div id="tabla" class="col-md-8">
+      <table class="table" border="1">
+        <tr>
+          <th>#</th>
+          <th><a href="{{url_for('ordenar_producto', ord='codigo')}}">Codigo</a></th>
+          <th><a href="{{url_for('ordenar_producto', ord='nombre')}}">Producto</a></th>
+          <th>Tipo</th>
+          <th>Editar</th>
+          <th>Eliminar</th>
+        </tr>
+        {% for d in data %}
+        <tr>
+          <td>{{loop.index}}</td>
+          <td>{{d.codigo}}</td>
+          <td>{{d.nombre}}</td>
+          <td>{{d.tipo}}</td>
+          <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}">Edit</button></td>
+          <td><a href="{{url_for('delete_producto', id=d.codigo)}}" class="btn btn-danger">Delete</a></td>
+        </tr>
+
+        <div class="modal" tabindex="-1" id="modal{{d.codigo}}">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Datos de {{d.nombre}}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form action="/update_producto/{{d.codigo}}" method="post">
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label textwhite">producto:</label>
+                    <input type="text" class="form-control" id="txtProducto" name="txtProducto" required="" value="{{d.nombre}}">
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label textwhite">Tipo:</label>
+                    <select name="cboTipo" id="cboTipo" class="form-select">
+                      {% for dcbo in datacbo %}
+                      <option value="{{dcbo.codigoTipo}}"{% if dcbo.nombre == d.tipo %}selected{% endif %}>{{dcbo.nombre}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-success">Update</button>
+                </div>
+                </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+</div><!-- div container-->
+</div>
+
+
+{% endblock %}

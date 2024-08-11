@@ -1,0 +1,80 @@
+/* GLOBAL STYLES
+-------------------------------------------------- */
+/* Padding below the footer and lighter body text */
+
+
+#test{
+	background-color: #2D437A;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-size: 100%;
+}
+
+.fondocolor{
+		background-color: #D7DBDD;
+}
+
+.fondocolor2{
+	background-color: #ECE4C6;
+}
+
+.textwhite{
+  color: #ffffff;
+  font-style: #ffffff;
+}
+
+.borde-form{
+	border-top: none;
+	border-left: none;
+	border-right: none;
+}
+
+.borde-form: hover{
+	border-bottom:2px solid #2D437A;
+}
+
+footer{
+  background-color: #D7DBDD;
+}
+
+/*
+.textborder{
+  border-bottom:3px;
+}
+*/
+
+.textborder:hover{
+  border-bottom:3px solid #46B9E7;
+}
+
+/*
+offset-x | offset-y | blur-radius | spread-radius | color
+box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+*/
+
+#formContacto{
+	  background-color: #ffffff;
+	padding-top: 30px;
+	padding-left: 40px;
+	padding-right: 40px;
+	padding-bottom: 20px;
+	border-radius: 20px;
+	box-shadow: 0 0 10px rgba(0,0,0,0.50);
+}
+
+#contenedor-mio{
+	padding: 100px;
+}
+
+#txtmessage{
+	resize: none;
+}
+
+.btn-redondo{
+	border-top-right-radius: 50px;
+	border-top-left-radius: 50px;
+	border-bottom-right-radius: 50px;
+	border-bottom-left-radius: 50px;
+}
+
+

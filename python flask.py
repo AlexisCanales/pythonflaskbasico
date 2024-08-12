@@ -1,6 +1,7 @@
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_mysqldb import MySQL
 
+############ version 2 prueba git ##########
 
 app = Flask(__name__)
 

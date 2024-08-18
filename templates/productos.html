@@ -135,7 +135,7 @@
                     <label for="exampleFormControlInput1" class="form-label textwhite">Tipo:</label>
                     <select name="cboTipo" id="cboTipo" class="form-select">
                       {% for dcbo in datacbo %}
-                      <option value="{{dcbo.codigoTipo}}"{% if dcbo.nombre == d.tipo %}selected{% endif %}>{{dcbo.nombre}}</option>
+                      <option value="{{dcbo.codigoTipo}}" {% if dcbo.nombre == d.tipo %}selected{% endif %}>{{dcbo.nombre}}</option>
                       {% endfor %}
                     </select>
                   </div>

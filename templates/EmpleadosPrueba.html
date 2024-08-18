@@ -1,0 +1,161 @@
+{% extends './layout.html' %}
+
+{% block title %}{{data2.titulo}}{% endblock %}
+
+{% block body %}
+<nav class="navbar navbar-expand-lg bg-light">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarText">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a href="{{url_for('menu')}}" class="navbar-brand">Menu</a>
+        </li>
+        <li class="nav-item">
+          <a href="{{url_for('listar_usuario')}}" class="navbar-brand">Usuarios</a>
+        </li>
+        <li class="nav-item">
+          <a href="{{url_for('listar_productos')}}" class="navbar-brand">Productos</a>
+        </li>
+      </ul>
+      <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} </label>
+      <a href="{{url_for('logout')}}" class="navbar-brand text-decoration-none"> Salir <i class="fa-solid fa-rectangle-xmark"></i></a>
+    </div>
+  </div>
+</nav>
+</br></br>
+<div class="text-center mb-5">
+    <h1>{{data2.Bienvenida}}</h1>
+</div>
+
+
+<div class="container">
+  <div class="row">
+    <div class="card shadow col-md-7">
+      <div class="card-body">
+        <form action="/empleados" method="POST" class="row g-3">
+          <div class="col-auto">
+            <label for="staticEmail2" class="visually-hidden">Nombre</label>
+            <input type="text" readonly class="form-control-plaintext" id="staticEmail2" value="Buscar por nombre:">
+          </div>
+          <div class="col-auto">
+            <label for="inputPassword2" class="visually-hidden">Password</label>
+            <input type="text" class="form-control" id="txtNombre" name="txtNombre" placeholder="nombre">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-3">Buscar</button>
+          </div>
+          <div class="col-auto">
+            <a href="{{url_for('listar_empleados')}}" class="btn btn-primary mb-3">Deshacer filtro</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="col-md-1"></div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      
+        {% for category, message in messages %}
+      <div class="alert {{ category }} alert-dismissible fade show col-md-3" role="alert">
+        <strong>{{ message }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+        {% endfor %}
+        
+    {% endif %}
+  {% endwith %}
+  </div>
+</br></br>
+
+  <!-- form guardar -->
+  <div class="row">
+
+
+    <div id="tabla" class="col-md-8 mb-auto">
+      <table class="table" border="1">
+        <tr>
+          <th>#</th>
+          <th><a href="{{url_for('ordenar_empleados', ord='codigo')}}" class="text-decoration-none">Codigo</a></th>
+          <th><a href="{{url_for('ordenar_empleados', ord='nombre')}}" class="text-decoration-none">Nombre</a></th>
+          <th>Edad</th>
+          <th>Direccion</th>
+          <th>Sexo</th>
+          <th>Fecha Nacimiento</th>
+          <th>Sueldo</th>
+          <th>Editar</th>
+          <th>Eliminar</th>
+        </tr>
+        {% for d in data%}
+        <tr>
+          <td>{{loop.index}}</td>
+          <td>{{d.codigo}}</td>
+          <td>{{d.nombre}}</td>
+          <td>{{d.edad}}</td>
+          <td>{{d.direccion}}</td>
+          <td>{{d.sexo}}</td>
+          <td>{{d.fecha}}</td>
+          <td>{{d.sueldo}}</td>
+          <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}">Edit</button></td>
+          <td><a href="{{url_for('delete_empleado', id=d.codigo)}}" class="btn btn-danger">Delete</a></td>
+        </tr>
+
+          <!-- modal update -->
+        <div class="modal" tabindex="-1" id="modal{{d.codigo}}">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Datos de {{d.nombre}}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form id="empleadoForm" action="/update_empleado/{{d.codigo}}" method="post">
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label textwhite">Empleado:</label>
+                    <input type="text" class="form-control" id="txtNombre" name="txtNombre" required="" value="{{d.nombre}}">
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label textwhite">Edad:</label>
+                    <input type="text" class="form-control" id="txtEdad" name="txtEdad" required="" value="{{d.edad}}">
+                  </div>
+                  <div class="mb-3">
+                    <div class="mb-3">
+                      <label for="exampleFormControlInput1" class="form-label textwhite">direccion:</label>
+                      <input type="text" class="form-control" id="txtDireccion" name="txtDireccion" value="{{d.direccion}}" required="">
+                    </div> 
+                    <div class="mb-3">
+                      <div class="btn-group">  
+                        <input type="radio" class="btn-check" name="btnrSexoModal" id="btnsexomodal1" autocomplete="off" value="Masculino" {% if d.sexo == "Masculino" %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="btnsexomodal1">Masculino</label>
+                        <input type="radio" class="btn-check" name="btnrSexoModal" id="btnsexomodal2" autocomplete="off" value="Femenino" {% if d.sexo == "Femenino" %}checked{% endif %}>
+                        <label class="btn btn-outline-danger" for="btnsexomodal2">Femenino</label>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="exampleFormControlInput1" class="form-label textwhite">fecha:</label> <!-- value YYYY-MM-DD , pero recibe DD-MM-YYYY -->
+                      <input type="date" class="form-control" id="txtFecha" name="txtFecha" value="{{ d.fecha | datetimeformat('%Y-%m-%d') }}">
+                    </div>
+                    <div class="mb-3">
+                      <label for="exampleFormControlInput1" class="form-label textwhite">sueldo:</label>
+                      <input type="text" class="form-control" id="txtSueldo" name="txtSueldo" value="{{d.sueldo}}" required="">
+                    </div>
+                </div>
+                  <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Update</button>
+                  </div>
+                </form>
+              </div>
+          </div>
+        </div>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+
+{% endblock %}

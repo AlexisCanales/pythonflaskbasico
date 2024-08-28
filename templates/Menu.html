@@ -20,6 +20,9 @@
           <li class="nav-item">
             <a href="{{url_for('listar_productos')}}" class="navbar-brand">Productos</a>
           </li>
+          <li class="nav-item">
+            <a href="{{url_for('listar_empleados')}}" class="navbar-brand">Empleados</a>
+          </li>
         </ul>
         <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} </label>
         <a href="{{url_for('logout')}}" class="navbar-brand text-decoration-none"> Salir <i class="fa-solid fa-rectangle-xmark"></i></a>
@@ -39,9 +42,7 @@
     <div class="form-floating mb-3">
       <a href="{{url_for('listar_empleados')}}" class="btn btn-primary mb-3 w-50 btn-lg">Empleados  <i class="fas fa-users"></i></a>
     </div>
-    <div class="form-floating mb-3">
-      <a href="{{url_for('listar_empleadosprueba')}}" class="btn btn-primary mb-3 w-50 btn-lg">Empleados  <i class="fas fa-users"></i></a>
-    </div>
+    <img src="/static/imagenes/city.png" alt="Imagen2">
 </div>
 
 {% endblock %}

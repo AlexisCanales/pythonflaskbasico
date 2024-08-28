@@ -7,8 +7,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mia.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-<title>Nuevo signin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <title>Nuevo signin</title>
 </head>
 <body class="bg-body-secondary">
         <div class="container-fluid row m-0 vh-100 justify-content-center align-items-center">
@@ -20,9 +22,11 @@
                                 <input type="text" class="form-control" id="txtUsuario" name="txtUsuario" placeholder="User">
                                 <label for="floatingInput">User</label>
                             </div>
-                            <div class="form-floating mb-3">
+                            <div class="form-floating mb-3 input-group">
                                 <input type="password" class="form-control" id="txtPassword" name="txtPassword" placeholder="Password">
                                 <label for="floatingPassword">Password</label>
+                                <button id="btnTogglePassword" type="button" class="btn btn-outline-primary input-group-append" data-toggle="txtPassword"><i class="fa-solid fa-eye"></i></button>
+
                             </div>
 
                             {% if message %}
@@ -38,7 +42,7 @@
                 </div>
             </div>
 
-
+        <script src="{{ url_for('static', filename='js/jquery-3.7.1.js') }}"></script>
         <script src="{{ url_for('static', filename='js/layout.js') }}"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 

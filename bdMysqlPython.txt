@@ -1,0 +1,85 @@
+
+CREATE BDPython
+
+CREATE TABLE Usuario(
+        codigo int(5) auto_increment primary key,
+		nombre varchar(20),
+		password varchar(10)
+);
+
+CREATE TABLE tipoProducto(
+        codigo int(5) auto_increment primary key,
+		nombre varchar(20)
+);
+
+
+CREATE TABLE Producto(
+        codigo int(5) auto_increment primary key,
+		nombre varchar(20),
+		codigoTipo int(5),
+		FOREIGN KEY(codigotipo) references tipoProducto(codigo) ON DELETE CASCADE
+);
+
+CREATE TABLE Empleado(
+        codigo int(5) auto_increment primary key,
+		nombre varchar(20),
+		edad varchar(3),
+		direccion varchar(50),
+		sexo ENUM('Masculino', 'Femenino'),
+		fecha_nacimiento DATE,
+		sueldo int(7)
+);
+
+
+---nueva
+CREATE TABLE Empleado(
+        codigo int(5) auto_increment primary key,
+		nombre varchar(20),
+		edad varchar(3),
+		direccion varchar(50),
+		sexo ENUM('Masculino', 'Femenino'),
+		fecha_nacimiento DATE,
+		sueldo int(7),
+		imagen LONGBLOB NOT NULL
+);
+
+
+insert into Usuario values(1,'juan','1234');
+insert into Usuario values(2,'javiera','1234');
+
+insert into tipoProducto values(1,'comestible');
+insert into tipoProducto values(2,'bebestible');
+
+insert into Producto values(1,'papas',1);
+insert into Producto values(2,'jugo',2);
+insert into Producto values(3,'carne',1);
+
+
+---insert multiple
+
+INSERT INTO personas (nombre, sexo) VALUES 
+('Juan Pérez', 'M'),
+('María López', 'F'),
+('Carlos Sánchez', 'M'),
+('Ana Gómez', 'F');
+
+o tambien
+
+insert into Empleado values
+(1,'Juan perez',25,'los jasmines #123','masculino','1999-08-15',1000000),
+(2,'Javiera nuñes',25,'los jasmines #122','femenino','1998-08-15',1000000),
+(3,'romina sanchez',29,'los boldos #123','femenino','1995-05-12',1000000),
+(4,'alexis canales',27,'los oros #123','masculino','1997-08-12',1500000),
+(5,'natalia diaz',25,'los jasmines #123','femenino','1999-08-15',1200000);
+
+
+
+
+Para mostrar una fecha almacenada en el formato YYYY-MM-DD como DD-MM-YYYY, puedes usar la función DATE_FORMAT:
+
+#ok
+SELECT DATE_FORMAT(fecha_nacimiento, '%d-%m-%Y') AS fecha_formateada FROM empleado;
+
+
+SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%d-%m-%Y') AS fecha_formateada,sueldo FROM empleado;
+

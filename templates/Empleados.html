@@ -20,6 +20,9 @@
         <li class="nav-item">
           <a href="{{url_for('listar_productos')}}" class="navbar-brand">Productos</a>
         </li>
+        <li class="nav-item">
+          <a href="{{url_for('listar_empleados')}}" class="navbar-brand">Empleados</a>
+        </li>
       </ul>
       <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} </label>
       <a href="{{url_for('logout')}}" class="navbar-brand text-decoration-none"> Salir <i class="fa-solid fa-rectangle-xmark"></i></a>
@@ -68,20 +71,17 @@
     {% endif %}
   {% endwith %}
   </div>
-</br></br>
+  </br></br>
+ 
 
   <!-- form guardar -->
   <div class="row">
     <div class="card shadow col-md-3 mb-auto">
       <div class="card-body">
-          <form method="post" action="/guardar_empleado">
+          <form method="post" action="/guardar_empleado" enctype="multipart/form-data">
             <div class="mb-3">
               <label for="exampleFormControlInput1" class="form-label textwhite">nombre:</label>
               <input type="text" class="form-control" id="txtNombre" name="txtNombre" placeholder="Nombre" required="">
-            </div>
-            <div class="mb-3">
-              <label for="exampleFormControlInput1" class="form-label textwhite">edad:</label>
-              <input type="text" class="form-control" id="txtEdad" name="txtEdad" placeholder="Edad" required="">
             </div>
               <div class="mb-3">
                 <label for="exampleFormControlInput1" class="form-label textwhite">direccion:</label>
@@ -104,6 +104,10 @@
                 <input type="text" class="form-control" id="txtSueldo" name="txtSueldo" placeholder="Sueldo" required="">
               </div>
               <div class="mb-3">
+                <label for="formFile" class="form-label">Imagen de empleado:</label>
+                <input class="form-control" type="file" name="imagen" id="imagen">
+              </div>
+              <div class="mb-3">
                 <div class="d-grid gap-2">
                   <input type="submit" id="btnenviar" name="btnenviar" value="Guardar" class="btn btn-lg btn-primary">
                 </div>
@@ -115,19 +119,24 @@
     <div class="col-md-1 mb-5"></div>
 
     <div id="tabla" class="col-md-8 mb-auto">
-      <table class="table" border="1">
-        <tr>
-          <th>#</th>
-          <th><a href="{{url_for('ordenar_empleados', ord='codigo')}}" class="text-decoration-none">Codigo</a></th>
-          <th><a href="{{url_for('ordenar_empleados', ord='nombre')}}" class="text-decoration-none">Nombre</a></th>
-          <th>Edad</th>
-          <th>Direccion</th>
-          <th>Sexo</th>
-          <th>Fecha Nacimiento</th>
-          <th>Sueldo</th>
-          <th>Editar</th>
-          <th>Eliminar</th>
-        </tr>
+      <table class="table table-hover">
+        <thead>
+          <button id="btnMostrar" class="btn btn-info"><i class="fa-solid fa-eye"></i>/<i class="fa-regular fa-eye-slash"></i></button>
+          <tr>
+            <th>#</th>
+            <th><a href="{{url_for('ordenar_empleados', ord='codigo')}}" class="text-decoration-none">Codigo</a></th>
+            <th><a href="{{url_for('ordenar_empleados', ord='nombre')}}" class="text-decoration-none">Nombre</a></th>
+            <th>Edad</th>
+            <th>Direccion</th>
+            <th>Sexo</th>
+            <th>Fecha Nacimiento</th>
+            <th>Sueldo</th>
+            <th class="imagenTd">imagen</th>
+            <th>Editar</th>
+            <th>Eliminar</th>
+            <th>Detalles</th>
+          </tr>
+        </thead>
         {% for d in data%}
         <tr>
           <td>{{loop.index}}</td>
@@ -138,57 +147,110 @@
           <td>{{d.sexo}}</td>
           <td>{{d.fecha}}</td>
           <td>{{d.sueldo}}</td>
+          <td class="imagenTd"><img src="{{ url_for('mostrar_imagen', id=d.codigo) }}" class="miniatura" alt="Imagen"></td>
           <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}">Edit</button></td>
           <td><a href="{{url_for('delete_empleado', id=d.codigo)}}" class="btn btn-danger">Delete</a></td>
+          <td><button type="button" class="btn btn-info" id="btn-detail{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modalDetail{{d.codigo}}">Detalles</button></td>
         </tr>
 
           <!-- modal update -->
         <div class="modal" tabindex="-1" id="modal{{d.codigo}}">
-          <div class="modal-dialog">
+          <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title">Datos de {{d.nombre}}</h5>
+                <h5 class="modal-title">Datos de: {{d.nombre}}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
-                <form id="empleadoForm" action="/update_empleado/{{d.codigo}}" method="post">
+
+
+                <form id="empleadoForm" action="/update_empleado/{{d.codigo}}" method="post" enctype="multipart/form-data">
                   <div class="mb-3">
-                    <label for="exampleFormControlInput1" class="form-label textwhite">Empleado:</label>
+                    <label for="txtNombre" class="form-label">Empleado:</label>
                     <input type="text" class="form-control" id="txtNombre" name="txtNombre" required="" value="{{d.nombre}}">
                   </div>
                   <div class="mb-3">
-                    <label for="exampleFormControlInput1" class="form-label textwhite">Edad:</label>
-                    <input type="text" class="form-control" id="txtEdad" name="txtEdad" required="" value="{{d.edad}}">
+                    <label for="txtDireccion" class="form-label">Direccion:</label>
+                    <input type="text" class="form-control" id="txtDireccion" name="txtDireccion" value="{{d.direccion}}" required="">
+                  </div> 
+                  <div class="mb-3">
+                    <div class="btn-group" role="group" aria-label="Basic radio toggle button group">  
+                      <input type="radio" class="btn-check" name="btnrSexoModal" id="btnsexomodal1{{d.codigo}}" autocomplete="off" value="Masculino" {% if d.sexo == "Masculino" %}checked{% endif %}>
+                      <label class="btn btn-outline-primary" for="btnsexomodal1{{d.codigo}}">Masculino</label>
+                      <input type="radio" class="btn-check" name="btnrSexoModal" id="btnsexomodal2{{d.codigo}}" autocomplete="off" value="Femenino" {% if d.sexo == "Femenino" %}checked{% endif %}>
+                      <label class="btn btn-outline-danger" for="btnsexomodal2{{d.codigo}}">Femenino</label>
+                    </div>
                   </div>
                   <div class="mb-3">
-                    <div class="mb-3">
-                      <label for="exampleFormControlInput1" class="form-label textwhite">direccion:</label>
-                      <input type="text" class="form-control" id="txtDireccion" name="txtDireccion" value="{{d.direccion}}" required="">
-                    </div> 
-                    <div class="mb-3">
-                      <div class="btn-group" role="group" aria-label="Basic radio toggle button group">  
-                        <input type="radio" class="btn-check" name="btnrSexoModal" id="btnsexomodal1{{d.codigo}}" autocomplete="off" value="Masculino" {% if d.sexo == "Masculino" %}checked{% endif %}>
-                        <label class="btn btn-outline-primary" for="btnsexomodal1{{d.codigo}}">Masculino</label>
-                        <input type="radio" class="btn-check" name="btnrSexoModal" id="btnsexomodal2{{d.codigo}}" autocomplete="off" value="Femenino" {% if d.sexo == "Femenino" %}checked{% endif %}>
-                        <label class="btn btn-outline-danger" for="btnsexomodal2{{d.codigo}}">Femenino</label>
-                      </div>
-                    </div>
-                    <div class="mb-3">
-                      <label for="exampleFormControlInput1" class="form-label textwhite">fecha:</label> <!-- value YYYY-MM-DD , pero recibe DD-MM-YYYY -->
-                      <input type="date" class="form-control" id="txtFecha" name="txtFecha" value="{{ d.fecha | datetimeformat('%Y-%m-%d') }}">
-                    </div>
-                    <div class="mb-3">
-                      <label for="exampleFormControlInput1" class="form-label textwhite">sueldo:</label>
-                      <input type="text" class="form-control" id="txtSueldo" name="txtSueldo" value="{{d.sueldo}}" required="">
-                    </div>
-                </div>
+                    <label for="txtFecha" class="form-label">Fecha:</label> <!-- value YYYY-MM-DD , pero recibe DD-MM-YYYY -->
+                    <input type="date" class="form-control" id="txtFecha" name="txtFecha" value="{{ d.fecha | datetimeformat('%Y-%m-%d') }}"><!-- datetimeformat es la funcion pero lleva un filtro -->
+                  </div>
+                  <div class="mb-3">
+                    <label for="txtSueldo" class="form-label">Sueldo:</label>
+                    <input type="text" class="form-control" id="txtSueldo" name="txtSueldo" value="{{d.sueldo}}" required="">
+                  </div>
+                  <div class="mb-3">
+                    <label for="Imagen" class="form-label">Imagen actual:</label>
+                    <img src="{{ url_for('mostrar_imagen', id=d.codigo) }}" class="miniatura" alt="Imagen">
+                  </div>
+                  <div class="mb-3">
+                    <label for="formFile" class="form-label">Nueva Imagen:</label>
+                    <input class="form-control" type="file" name="imagen" id="imagen">
+                  </div>
                   <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Update</button>
+                    <button type="submit" class="btn btn-success btn-lg">Update</button>
                   </div>
                 </form>
+
+
               </div>
+            </div>
           </div>
         </div>
+
+        <!-- modal details -->
+        <div class="modal" tabindex="-1" id="modalDetail{{d.codigo}}">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Datos de : {{d.nombre}}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="container">
+                  <div class="row">
+                      <div class="col-md-6">
+                        <img src="{{ url_for('mostrar_imagen', id=d.codigo) }}" class="portada-small shadow rounded" alt="Imagen">
+                      </div>
+                      <div class="col-md-6">
+                        <form id="empleadoForm">
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Empleado:</strong> {{d.nombre}}</label>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Edad:</strong> {{d.edad}}</label>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Direccion:</strong> {{d.direccion}}</label>
+                          </div> 
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Sexo:</strong> {{d.sexo}}</label>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Fecha de nacimiento:</strong> {{d.fecha}}</label> <!-- value YYYY-MM-DD , pero recibe DD-MM-YYYY -->
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Sueldo:</strong> {{d.sueldo}}</label>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         {% endfor %}
       </table>
     </div>

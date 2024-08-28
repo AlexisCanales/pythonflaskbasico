@@ -1,6 +1,8 @@
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for, send_file
 from flask_mysqldb import MySQL
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import io
 
 
 ############ version 2 prueba git ##########
@@ -269,10 +271,9 @@ def ordenar_producto(ord):
     return render_template('productos.html', data=data, data2=data2)
 
 #no se puede usar el mismo approute en 2 funciones
-@app.route('/productos')
+@app.route('/productos')# se activa solo al cargar la pagina, ya que tiene el mismo decorador que el listar
 def llenarcbo_productos():
     datacbo = {}
-    print("llego a llenar cbo")
     try:
         cursor = conexion.connection.cursor()
         sql = "SELECT tipoproducto.codigo AS codigoTipo,tipoproducto.nombre FROM tipoproducto"
@@ -282,8 +283,6 @@ def llenarcbo_productos():
         columName=[columna[0] for columna in cursor.description]
         for record in productos:
             datacbo.append(dict(zip(columName, record)))
-        print("datos cbo")
-        print(datacbo)
     except Exception as ex:
         datacbo['mensaje'] = 'Error...'
     return datacbo
@@ -349,20 +348,16 @@ def listar_empleados():
     } #filtro
     if request.method== 'POST': 
         nombre= request.form['txtNombre']
-        print(request.form['txtNombre'])
-        print("llego al if filtro")
         try:
             cursor = conexion.connection.cursor()
             # cuando hay fechas y where con %, en la fecha se usa %% para que funcione, %%d-%%m-%%Y = DDMMYYYY o %%d-%%m-%%y= DDMMYY
             sql = "SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%%d-%%m-%%Y') AS fecha,sueldo FROM empleado where nombre=%s"
             cursor.execute(sql,(nombre,))
-            empleados = cursor.fetchall()#usar fetchall, fetchone da error
-            print(empleados)
+            empleados = cursor.fetchall()
             data=[]        
             columName=[columna[0] for columna in cursor.description]
             for record in empleados:
                 data.append(dict(zip(columName, record)))
-                print("llego al for listar filtro")
         except Exception as ex:
             data['mensaje'] = 'Error...'
         return render_template('Empleados.html', data=data, data2=data2)
@@ -370,10 +365,9 @@ def listar_empleados():
         try:
             print("llego al listar normal")
             cursor = conexion.connection.cursor()
-            sql = "SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%d-%m-%Y') AS fecha,sueldo FROM empleado"
+            sql = "SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%d-%m-%Y') AS fecha,sueldo,imagen FROM empleado"
             cursor.execute(sql)
-            empleados = cursor.fetchall()#usar fetchall, fetchone da error
-            print(empleados)
+            empleados = cursor.fetchall()
             data=[]        
             columName=[columna[0] for columna in cursor.description]
             for record in empleados:
@@ -381,50 +375,6 @@ def listar_empleados():
         except Exception as ex:
             data['mensaje'] = 'Error...'
         return render_template('Empleados.html', data=data, data2=data2)
-
-
-@app.route('/empleadosprueba', methods=['GET','POST'])
-def listar_empleadosprueba():
-    data = {}
-    data2={
-        'titulo':'Empleados',
-        'Bienvenida':'EMPLEADOS',
-        'counter':1
-    } #filtro
-    if request.method== 'POST': 
-        nombre= request.form['txtNombre']
-        print(request.form['txtNombre'])
-        print("llego al if filtro")
-        try:
-            cursor = conexion.connection.cursor()
-            # cuando hay fechas y where con %, en la fecha se usa %% para que funcione, %%d-%%m-%%Y = DDMMYYYY o %%d-%%m-%%y= DDMMYY
-            sql = "SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%%d-%%m-%%Y') AS fecha,sueldo FROM empleado where nombre=%s"
-            cursor.execute(sql,(nombre,))
-            empleados = cursor.fetchall()#usar fetchall, fetchone da error
-            print(empleados)
-            data=[]        
-            columName=[columna[0] for columna in cursor.description]
-            for record in empleados:
-                data.append(dict(zip(columName, record)))
-                print("llego al for listar filtro")
-        except Exception as ex:
-            data['mensaje'] = 'Error...'
-        return render_template('EmpleadosPrueba.html', data=data, data2=data2)
-    else:#listar normal
-        try:
-            print("llego al listar normal")
-            cursor = conexion.connection.cursor()
-            sql = "SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%d-%m-%Y') AS fecha,sueldo FROM empleado"
-            cursor.execute(sql)
-            empleados = cursor.fetchall()#usar fetchall, fetchone da error
-            print(empleados)
-            data=[]        
-            columName=[columna[0] for columna in cursor.description]
-            for record in empleados:
-                data.append(dict(zip(columName, record)))
-        except Exception as ex:
-            data['mensaje'] = 'Error...'
-        return render_template('EmpleadosPrueba.html', data=data, data2=data2)
 
 
 @app.route('/ordenar_empleados/<string:ord>')
@@ -437,13 +387,11 @@ def ordenar_empleados(ord):
     try:
         cursor = conexion.connection.cursor()
         if ord:
-            print(ord)
             sql = f"SELECT codigo,nombre,edad,direccion,sexo,DATE_FORMAT(fecha_nacimiento, '%d-%m-%Y') AS fecha,sueldo FROM empleado ORDER BY {ord}"
         cursor.execute(sql)
         empleados = cursor.fetchall()#usar fetchall, fetchone da error
         data=[]        
         columName=[columna[0] for columna in cursor.description]
-        print(empleados)
         for record in empleados:
             data.append(dict(zip(columName, record)))
     except Exception as ex:
@@ -459,23 +407,23 @@ def guardar_empleado():
         'counter':1
     }
     nombre= request.form['txtNombre']
-    #calcular edad segun fecha nacimiento
-    edad= request.form['txtEdad']
     direccion= request.form['txtDireccion']
     sexo= request.form['btnrSexo']
-    fecha= request.form['txtFecha']
+    fechad= request.form['txtFecha']
+    fecha = datetime.strptime(fechad, '%Y-%m-%d')#trasforma la fecha tipo varchar a datetime
+    edad = relativedelta(datetime.now(), fecha)#hace el calculo de edad en formato YYYY-MM-DD
+    edad=edad.years #para guardar solo el año
     sueldo= request.form['txtSueldo']
-    if nombre and edad and direccion and sexo and fecha and sueldo:
+    imagen = request.files['imagen'].read()
+    if nombre and edad and direccion and sexo and fecha and sueldo and imagen:
         cursor = conexion.connection.cursor()
         sql = "SELECT * FROM empleado where nombre=%s"
         cursor.execute(sql,(nombre,))
-        empleados = cursor.fetchall()#usar fetchall, fetchone da error
+        empleados = cursor.fetchall()
         if empleados is None or empleados==():#si no encontro datos
-            print("usuario nuevo")
-            print(empleados)
             cursor = conexion.connection.cursor()
-            sql = "INSERT INTO empleado(nombre, edad, direccion, sexo, fecha_nacimiento, sueldo) VALUES (%s, %s, %s, %s, %s, %s)"
-            data=(nombre,edad,direccion,sexo,fecha,sueldo) 
+            sql = "INSERT INTO empleado(nombre, edad, direccion, sexo, fecha_nacimiento, sueldo, imagen) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            data=(nombre,edad,direccion,sexo,fecha,sueldo,imagen) 
             cursor.execute(sql, data)
             conexion.connection.commit()
             flash('Datos guardados ok','alert-success')
@@ -496,18 +444,20 @@ def delete_empleado(id):
 @app.route('/update_empleado/<string:codigo>', methods=['POST'])
 def update_empleado(codigo):
     nombre= request.form['txtNombre']
-    edad= request.form['txtEdad']
     direccion= request.form['txtDireccion']
     sexo= request.form['btnrSexoModal']
-    print(sexo)
-    fecha= request.form['txtFecha']
+    fechad= request.form['txtFecha']
+    fecha = datetime.strptime(fechad, '%Y-%m-%d')#trasforma la fecha tipo varchar a datetime
+    edad = relativedelta(datetime.now(), fecha)#hace el calculo de edad en formato YYYY-MM-DD
+    edad=edad.years #para guardar solo el año
     sueldo= request.form['txtSueldo']
-    if nombre and edad and direccion and sexo and fecha and sueldo:
+    imagen = request.files['imagen'].read()
+    if nombre and edad and direccion and sexo and fecha and sueldo and imagen:
         cursor = conexion.connection.cursor()
-        sql = "UPDATE empleado SET nombre=%s, edad=%s, direccion=%s, sexo=%s, fecha_nacimiento=%s, sueldo=%s where codigo=%s"
+        sql = "UPDATE empleado SET nombre=%s, edad=%s, direccion=%s, sexo=%s, fecha_nacimiento=%s, sueldo=%s, imagen=%s where codigo=%s"
         #si no se pone codigo da error
         #si sepone codigo al inicio no da error pero no hace el update
-        data=(nombre,edad,direccion,sexo,fecha,sueldo,codigo) #se pone el codigo en ese orden ya que el codigo se usa en la consulta
+        data=(nombre,edad,direccion,sexo,fecha,sueldo,imagen,codigo) #se pone el codigo en ese orden ya que el codigo se usa en la consulta
         cursor.execute(sql, data)
         conexion.connection.commit()
         flash('Datos actualizados ok','alert-success')
@@ -517,6 +467,22 @@ def update_empleado(codigo):
 def datetimeformat(value, format='%Y-%m-%d'):
     return datetime.strptime(value, '%d-%m-%Y').strftime(format)
 
+
+@app.route('/mostrar_imagen/<string:id>')
+def mostrar_imagen(id):
+    print("llego a funcion imagen")
+    print(id)
+    cursor = conexion.connection.cursor()
+    sql = "SELECT imagen from empleado where codigo=%s"#para que esta linea muestra el codigo amarillo en consola
+    data = (id,)  # Asegúrate de pasar el código como una tupla
+    cursor.execute(sql, data)
+    image_data = cursor.fetchone()
+    if image_data:
+        # Extrae la imagen de la tupla
+        imagen_bytes = image_data[0]
+        return send_file(io.BytesIO(imagen_bytes), mimetype='image/jpeg')
+    else:
+        return "Imagen no encontrada", 404
 
 
 '''

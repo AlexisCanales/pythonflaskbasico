@@ -1,15 +1,27 @@
 
 CREATE BDPython
 
-CREATE TABLE Usuario(
+
+--- version advanced2
+CREATE TABLE tipoUsuario(
         codigo int(5) auto_increment primary key,
-		nombre varchar(20),
-		password varchar(10)
+		tipo varchar(20)
 );
 
+---version advanced 2
+CREATE TABLE Usuario(
+        codigo int(5) auto_increment primary key,
+		username varchar(20),
+		password varchar(10),
+		codigoTipo int(5),
+		FOREIGN KEY(codigoTipo) references tipoUsuario(codigo) ON DELETE CASCADE
+);
+
+---new
 CREATE TABLE tipoProducto(
         codigo int(5) auto_increment primary key,
-		nombre varchar(20)
+		nombre varchar(20),
+		imagen LONGBLOB NOT NULL
 );
 
 
@@ -20,14 +32,16 @@ CREATE TABLE Producto(
 		FOREIGN KEY(codigotipo) references tipoProducto(codigo) ON DELETE CASCADE
 );
 
-CREATE TABLE Empleado(
+---nueva version advanced 3
+CREATE TABLE Producto(
         codigo int(5) auto_increment primary key,
 		nombre varchar(20),
-		edad varchar(3),
-		direccion varchar(50),
-		sexo ENUM('Masculino', 'Femenino'),
-		fecha_nacimiento DATE,
-		sueldo int(7)
+		stock int(5),
+		stock_min int(5),
+		estado ENUM('Ok', 'Insuficiente'),
+		imagen LONGBLOB NOT NULL,
+		codigoTipo int(5),
+		FOREIGN KEY(codigotipo) references tipoProducto(codigo) ON DELETE CASCADE
 );
 
 
@@ -44,15 +58,55 @@ CREATE TABLE Empleado(
 );
 
 
-insert into Usuario values(1,'juan','1234');
-insert into Usuario values(2,'javiera','1234');
+---new
+CREATE TABLE Ventas(
+        codigo int(10) auto_increment primary key,
+		fecha DATE,
+		total int(10),
+		codigoEmpleado int(5),
+		FOREIGN KEY(codigoEmpleado) references empleado(codigo) ON DELETE CASCADE
+);
+
+
+---new
+CREATE TABLE DetalleVentas(
+        codigo int(10) auto_increment primary key,
+		codigoProducto int(5),
+		cantidad int(5),
+		total int(10),
+		codigoVenta int(10),
+		FOREIGN KEY(codigoProducto) references Producto(codigo) ON DELETE CASCADE,
+		FOREIGN KEY(codigoVenta) references Ventas(codigo) ON DELETE CASCADE
+);
+
+
+
+
+---new
+insert into tipoUsuario values(1,'Administrador');
+insert into tipoUsuario values(2,'Ejecutivo');
+insert into tipoUsuario values(3,'Invitado');
+
+
+---new
+insert into Usuario values(1,'juan','1234',2);
+insert into Usuario values(2,'javiera','1234',2);
+insert into Usuario values(3,'alexis','1234',1);
+insert into Usuario values(4,'natalia','1234',3);
+insert into Usuario values(5,'cata','1234',3);
 
 insert into tipoProducto values(1,'comestible');
 insert into tipoProducto values(2,'bebestible');
 
-insert into Producto values(1,'papas',1);
-insert into Producto values(2,'jugo',2);
-insert into Producto values(3,'carne',1);
+
+---nuevo
+insert into Producto values(1,'Papas',10,5,'Ok',1);
+insert into Producto values(2,'Jugo',20,5,'Ok',2);
+insert into Producto values(3,'Carne',50,20,'Ok',1);
+insert into Producto values(4,'Bebida Pepsi',5,10,'Insuficiente',2);
+insert into Producto values(5,'Chocolates',5,20,'Insuficiente',1);
+
+sql = "SELECT producto.codigo,producto.nombre,producto.stock,producto.stock_min,producto.estado,tipoproducto.nombre AS tipo FROM producto,tipoproducto WHERE producto.codigoTipo=tipoproducto.codigo AND producto.nombre=%s"
 
 
 ---insert multiple

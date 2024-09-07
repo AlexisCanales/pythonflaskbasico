@@ -24,7 +24,7 @@
           <a href="{{url_for('listar_empleados')}}" class="navbar-brand">Empleados</a>
         </li>
       </ul>
-      <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} </label>
+      <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} / Tipo:</label> <label id="tipoUsuario" class="navbar-brand">{{session['tipo']}}</label>
       <a href="{{url_for('logout')}}" class="navbar-brand text-decoration-none"> Salir <i class="fa-solid fa-rectangle-xmark"></i></a>
     </div>
   </div>
@@ -109,7 +109,7 @@
               </div>
               <div class="mb-3">
                 <div class="d-grid gap-2">
-                  <input type="submit" id="btnenviar" name="btnenviar" value="Guardar" class="btn btn-lg btn-primary">
+                  <input type="submit" id="btnenviar" name="btnenviar" value="Guardar" class="btn btn-lg btn-primary" {% if session['tipo'] == 'Invitado' %}disabled{% endif %}>
                 </div>
               </div>
           </form>
@@ -148,8 +148,8 @@
           <td>{{d.fecha}}</td>
           <td>{{d.sueldo}}</td>
           <td class="imagenTd"><img src="{{ url_for('mostrar_imagen', id=d.codigo) }}" class="miniatura" alt="Imagen"></td>
-          <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}">Edit</button></td>
-          <td><a href="{{url_for('delete_empleado', id=d.codigo)}}" class="btn btn-danger">Delete</a></td>
+          <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}" {% if session['tipo'] == 'Invitado' %}disabled{% endif %}>Edit</button></td>
+          <td><a href="{{url_for('delete_empleado', id=d.codigo)}}" class="btn btn-danger" {% if session['tipo'] == 'Invitado' %} style="pointer-events: none;"{% endif %}>Delete</a></td>
           <td><button type="button" class="btn btn-info" id="btn-detail{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modalDetail{{d.codigo}}">Detalles</button></td>
         </tr>
 

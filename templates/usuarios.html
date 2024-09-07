@@ -79,12 +79,21 @@
       <div class="card-body">
           <form method="post" action="/guardar">
               <div class="mb-3">
-                <label for="exampleFormControlInput1" class="form-label textwhite">usuario:</label>
+                <label for="exampleFormControlInput1" class="form-label">Usuario:</label>
                 <input type="text" class="form-control" id="txtUsuario" name="txtUsuario" placeholder="Usuario" required="">
               </div>
               <div class="mb-3">
-                <label for="exampleFormControlInput1" class="form-label textwhite">password:</label>
+                <label for="exampleFormControlInput1" class="form-label">Password:</label>
                 <input type="password" class="form-control" id="txtPassword" name="txtPassword" placeholder="Password" required="">
+              </div>
+              <div class="mb-3">
+                <label for="exampleFormControlInput1" class="form-label">tipo:</label>
+                <select name="cboTipo" id="cboTipo" class="form-select">
+                  <option selected>Seleccione</option>
+                  {% for dcbo in datacbo %}
+                  <option value="{{dcbo.codigoTipo}}">{{dcbo.tipo}}</option>
+                  {% endfor %}
+                </select>
               </div>
               <div class="mb-3">
                 <div class="d-grid gap-2">
@@ -97,24 +106,30 @@
 
     <div class="col-md-1 mb-5"></div>
 
-    <div id="tabla" class="col-md-8 mb-auto">
-      <table class="table table-hover">
+    <div id="divtabla" class="col-md-8 mb-auto">
+      <table id="tabla" class="table table-hover">
         <thead class="table-primary">
-        <tr>
-          <th>#</th>
-          <th><a href="{{url_for('ordenar_usuario', ord='codigo')}}" class="text-decoration-none">Codigo</a></th>
-          <th><a href="{{url_for('ordenar_usuario', ord='nombre')}}" class="text-decoration-none">Nombre</a></th>
-          <th>Password</th>
-          <th>Editar</th>
-          <th>Eliminar</th>
-        </tr>
+          <form method="post" action="/download">
+            <input type="hidden" name="table_data" id="table_data">
+            <button type="submit" id="btnExport" class="btn btn-outline-success" onclick="prepareData()"> Exportar CSV <i class="fa-solid fa-file-export"></i></button>
+          </form>
+          <tr>
+            <th>#</th>
+            <th><a href="{{url_for('ordenar_usuario', ord='codigo')}}" class="text-decoration-none">Codigo</a></th>
+            <th><a href="{{url_for('ordenar_usuario', ord='username')}}" class="text-decoration-none">Username</a></th>
+            <th>Password</th>
+            <th>Tipo</th>
+            <th>Editar</th>
+            <th>Eliminar</th>
+          </tr>
         </thead>
         {% for d in data%}
         <tr>
           <td>{{loop.index}}</td>
           <td>{{d.codigo}}</td>
-          <td>{{d.nombre}}</td>
+          <td>{{d.username}}</td>
           <td>{{d.password}}</td>
+          <td>{{d.tipo}}</td>
           <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}">Edit</button></td>
           <td><a href="{{url_for('delete', id=d.codigo)}}" class="btn btn-danger">Delete</a></td>
         </tr>
@@ -123,18 +138,26 @@
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title">Datos de {{d.nombre}}</h5>
+                <h5 class="modal-title">Datos de {{d.username}}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
                 <form action="/update/{{d.codigo}}" method="post">
                   <div class="mb-3">
-                    <label for="exampleFormControlInput1" class="form-label textwhite">usuario:</label>
-                    <input type="text" class="form-control" id="txtUsuario" name="txtUsuario" required="" value="{{d.nombre}}">
+                    <label for="exampleFormControlInput1" class="form-label">usuario:</label>
+                    <input type="text" class="form-control" id="txtUsuario" name="txtUsuario" required="" value="{{d.username}}">
                   </div>
                   <div class="mb-3">
-                    <label for="exampleFormControlInput1" class="form-label textwhite">password:</label>
+                    <label for="exampleFormControlInput1" class="form-label">password:</label>
                     <input type="text" class="form-control" id="txtPassword" name="txtPassword" required="" value="{{d.password}}">
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label">Tipo:</label>
+                    <select name="cboTipo" id="cboTipo" class="form-select">
+                      {% for dcbo in datacbo %}
+                      <option value="{{dcbo.codigoTipo}}" {% if dcbo.tipo == d.tipo %}selected{% endif %}>{{dcbo.tipo}}</option>
+                      {% endfor %}
+                    </select>
                   </div>
                   </div>
                 <div class="modal-footer">

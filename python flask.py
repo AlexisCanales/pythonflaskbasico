@@ -1,8 +1,17 @@
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for, send_file
+import os
+import MySQLdb
+from flask import Flask, Response, flash, jsonify, redirect, render_template, request, session, url_for, send_file
 from flask_mysqldb import MySQL
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import io
+import pandas as pd
+
+# os para usar fechas en export
+# response para export
+# io para imagenes y archivos
+#pandas para hacer import
+
 
 
 ############ version 2 prueba git ##########
@@ -14,6 +23,9 @@ app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'bdpython'
 app.config['SECRET_KEY'] = 'codigoCualquiera-HEX_SEC_KEY'
+#app.config['MYSQL_CURSORCLASS'] = 'DictCursor' # devuelve diccionarios en global
+# o si se quiere para una funcion especifica se deja esto comentado y se agrega como en la
+#funcion de login
 
 #conexion de mysql y app
 conexion = MySQL(app)
@@ -45,19 +57,17 @@ def login():
     }
     usuario= request.form['txtUsuario']
     password= request.form['txtPassword']
-
-    cursor = conexion.connection.cursor()
-    sql = "SELECT * FROM usuario where nombre=%s and password=%s"
+    cursor = conexion.connection.cursor(MySQLdb.cursors.DictCursor)
+    #sql = "SELECT * FROM usuario where username=%s and password=%s"
+    sql = "SELECT Usuario.codigo,Usuario.username,Usuario.password,tipoUsuario.tipo FROM Usuario,tipoUsuario WHERE Usuario.codigoTipo=tipoUsuario.codigo and username=%s and password=%s"
     cursor.execute(sql,(usuario,password))
     usuarios = cursor.fetchone()
-    print("llego al try login")
     if usuarios is not None and usuarios!=():#si encontro datos
         print("llego al if login")
-        print(usuario)
-        print(password)
-        print(usuarios)
         session['usuario'] = usuario
         session['password'] = password
+        session['tipo'] = usuarios['tipo']
+        #print(session['tipo'])
         return redirect(url_for('menu'))#va a la funcion menu
     else:
         return render_template('signIn.html', message="Las credenciales no son correctas")
@@ -84,8 +94,10 @@ def menu():
 
 ### USUARIOS
 
+#tiene listar normal y filtro
 @app.route('/usuarios', methods=['GET','POST'])
 def listar_usuario():
+    datacbo=llenarcbo_usuarios()
     data = {}
     data2={
         'titulo':'Usuarios',
@@ -97,7 +109,7 @@ def listar_usuario():
         print(request.form['txtNombre'])
         try:
             cursor = conexion.connection.cursor()
-            sql = "SELECT * FROM usuario where nombre=%s"
+            sql = "SELECT Usuario.codigo,Usuario.username,Usuario.password,tipoUsuario.tipo FROM Usuario,tipoUsuario WHERE Usuario.codigoTipo=tipoUsuario.codigo and username=%s"
             cursor.execute(sql,(nombre,))
             usuarios = cursor.fetchall()#usar fetchall, fetchone da error
             data=[]        
@@ -107,11 +119,11 @@ def listar_usuario():
                 print("llego al for")
         except Exception as ex:
             data['mensaje'] = 'Error...'
-        return render_template('usuarios.html', data=data, data2=data2)
+        return render_template('usuarios.html', data=data, data2=data2,datacbo=datacbo)
     else:#listar normal
         try:
             cursor = conexion.connection.cursor()
-            sql = "SELECT * FROM usuario"
+            sql = "SELECT Usuario.codigo,Usuario.username,Usuario.password,tipoUsuario.tipo FROM Usuario,tipoUsuario WHERE Usuario.codigoTipo=tipoUsuario.codigo"
             cursor.execute(sql)
             usuarios = cursor.fetchall()#usar fetchall, fetchone da error
             data=[]        
@@ -120,12 +132,13 @@ def listar_usuario():
                 data.append(dict(zip(columName, record)))
         except Exception as ex:
             data['mensaje'] = 'Error...'
-        return render_template('usuarios.html', data=data, data2=data2)
+        return render_template('usuarios.html', data=data, data2=data2,datacbo=datacbo)
 
 #url for es el app route
 
 @app.route('/ordenar_usuario/<string:ord>')
 def ordenar_usuario(ord):
+    datacbo=llenarcbo_usuarios()
     data = {}
     data2={
         'titulo':'Usuarios',
@@ -136,7 +149,7 @@ def ordenar_usuario(ord):
         #nuevo
         if ord:
             print(ord)
-            sql = f"SELECT * FROM usuario ORDER BY {ord}"
+            sql = f"SELECT Usuario.codigo,Usuario.username,Usuario.password,tipoUsuario.tipo FROM Usuario,tipoUsuario WHERE Usuario.codigoTipo=tipoUsuario.codigo ORDER BY {ord}"
         cursor.execute(sql)
         usuarios = cursor.fetchall()#usar fetchall, fetchone da error
         data=[]        
@@ -145,7 +158,23 @@ def ordenar_usuario(ord):
             data.append(dict(zip(columName, record)))
     except Exception as ex:
         data['mensaje'] = 'Error...'
-    return render_template('usuarios.html', data=data, data2=data2)
+    return render_template('usuarios.html', data=data, data2=data2,datacbo=datacbo)
+
+@app.route('/usuarios')# se activa solo al cargar la pagina, ya que tiene el mismo decorador que el listar
+def llenarcbo_usuarios():
+    datacbo = {}
+    try:
+        cursor = conexion.connection.cursor()
+        sql = "SELECT tipousuario.codigo AS codigoTipo,tipousuario.tipo FROM tipousuario"
+        cursor.execute(sql)
+        usuarios = cursor.fetchall()#usar fetchall, fetchone da error
+        datacbo=[]
+        columName=[columna[0] for columna in cursor.description]
+        for record in usuarios:
+            datacbo.append(dict(zip(columName, record)))
+    except Exception as ex:
+        datacbo['mensaje'] = 'Error...'
+    return datacbo
 
 @app.route('/guardar', methods=['POST'])
 def guardar():
@@ -156,18 +185,18 @@ def guardar():
     }
     usuario= request.form['txtUsuario']
     password= request.form['txtPassword']
-    if usuario and password:
-        #nuevo
+    tipo= request.form['cboTipo']
+    if usuario and password and tipo:
         cursor = conexion.connection.cursor()
-        sql = "SELECT * FROM usuario where nombre=%s"
+        sql = "SELECT * FROM usuario where username=%s"
         cursor.execute(sql,(usuario,))
         usuarios = cursor.fetchall()#usar fetchall, fetchone da error
         if usuarios is None or usuarios==():#si no encontro datos
             print("usuario nuevo")
             print(usuarios)
             cursor = conexion.connection.cursor()
-            sql = "INSERT INTO usuario(nombre, password) VALUES (%s, %s)"
-            data=(usuario,password)
+            sql = "INSERT INTO usuario(username, password, codigoTipo) VALUES (%s, %s, %s)"
+            data=(usuario,password,tipo)
             cursor.execute(sql, data)
             conexion.connection.commit()
             flash('Datos guardados ok','alert-success')
@@ -189,12 +218,13 @@ def delete(id):
 def update(codigo):
     nombre= request.form['txtUsuario']
     password= request.form['txtPassword']
-    if nombre and password:
+    tipo= request.form['cboTipo']
+    if nombre and password and tipo:
         cursor = conexion.connection.cursor()
-        sql = "UPDATE usuario SET nombre=%s, password=%s where codigo=%s"
+        sql = "UPDATE usuario SET username=%s, password=%s, codigoTipo=%s where codigo=%s"
         #si no se pone codigo da error
         #si sepone codigo al inicio no da error pero no hace el update
-        data=(nombre,password,codigo)#se pone el codigo en ese orden ya que el codigo se usa en la consulta
+        data=(nombre,password,tipo,codigo)#se pone el codigo en ese orden ya que el codigo se usa en la consulta
         cursor.execute(sql, data)
         conexion.connection.commit()
         flash('Datos actualizados ok','alert-success')
@@ -219,7 +249,7 @@ def listar_productos():
         print(request.form['txtNombre'])
         try:
             cursor = conexion.connection.cursor()
-            sql = "SELECT producto.codigo,producto.nombre,tipoproducto.nombre AS tipo FROM producto,tipoproducto WHERE producto.codigoTipo=tipoproducto.codigo AND producto.nombre=%s"
+            sql = "SELECT producto.codigo,producto.nombre,producto.stock,producto.stock_min,producto.estado,tipoproducto.nombre AS tipo FROM producto,tipoproducto WHERE producto.codigoTipo=tipoproducto.codigo AND producto.nombre=%s"
             cursor.execute(sql,(nombre,))
             productos = cursor.fetchall()#usar fetchall, fetchone da error
             data=[]        
@@ -231,9 +261,8 @@ def listar_productos():
         return render_template('productos.html', data=data, data2=data2,datacbo=datacbo)
     else: #listar normal
         try:
-            print("llego al listar productos")
             cursor = conexion.connection.cursor()
-            sql = "SELECT producto.codigo,producto.nombre,tipoproducto.nombre AS tipo FROM producto,tipoproducto WHERE producto.codigoTipo=tipoproducto.codigo"
+            sql = "SELECT producto.codigo,producto.nombre,producto.stock,producto.stock_min,producto.estado,tipoproducto.nombre AS tipo FROM producto,tipoproducto WHERE producto.codigoTipo=tipoproducto.codigo"
             cursor.execute(sql)
             productos = cursor.fetchall()#usar fetchall, fetchone da error
             data=[]        
@@ -249,6 +278,7 @@ def listar_productos():
 #ordenar
 @app.route('/ordenar_producto/<string:ord>')
 def ordenar_producto(ord):
+    datacbo=llenarcbo_productos()
     data = {}
     data2={
         'titulo':'productos',
@@ -259,7 +289,7 @@ def ordenar_producto(ord):
         #nuevo
         if ord:
             print(ord)
-            sql = f"SELECT * FROM producto ORDER BY {ord}"
+            sql = f"SELECT producto.codigo,producto.nombre,producto.stock,producto.stock_min,producto.estado,tipoproducto.nombre AS tipo FROM producto,tipoproducto WHERE producto.codigoTipo=tipoproducto.codigo ORDER BY {ord}"
         cursor.execute(sql)
         productos = cursor.fetchall()#usar fetchall, fetchone da error
         data=[]        
@@ -268,7 +298,7 @@ def ordenar_producto(ord):
             data.append(dict(zip(columName, record)))
     except Exception as ex:
         data['mensaje'] = 'Error...'
-    return render_template('productos.html', data=data, data2=data2)
+    return render_template('productos.html', data=data, data2=data2,datacbo=datacbo)
 
 #no se puede usar el mismo approute en 2 funciones
 @app.route('/productos')# se activa solo al cargar la pagina, ya que tiene el mismo decorador que el listar
@@ -291,21 +321,26 @@ def llenarcbo_productos():
 @app.route('/guardar_producto', methods=['POST'])
 def guardar_producto():
     producto= request.form['txtProducto']
+    stock= request.form['txtStock']
+    stockminimo= request.form['txtStockMinimo']
+    if stock > stockminimo:
+        estado="Ok"
+    else:
+        estado="Insuficiente"
     tipo= request.form['cboTipo']
-    if producto and tipo:
+    if producto and stock and stockminimo and estado and tipo: #si vienen datos del form
         cursor = conexion.connection.cursor()
         sql = "SELECT * FROM producto where nombre=%s"
         cursor.execute(sql,(producto,))
-        productos = cursor.fetchall()#usar fetchall, fetchone da error
-        if productos is None or productos==():#si no encontro datos
+        productos = cursor.fetchall()
+        if productos is None or productos==():#si no encontro datos entonces guarda
             cursor = conexion.connection.cursor()
-            sql = "INSERT INTO producto(nombre, codigoTipo) VALUES (%s, %s)"
-            data=(producto,tipo)
+            sql = "INSERT INTO producto(nombre, stock, stock_min, estado, codigoTipo) VALUES (%s, %s, %s, %s, %s)"
+            data=(producto,stock,stockminimo,estado,tipo)
             cursor.execute(sql, data)
             conexion.connection.commit()
             flash('Datos guardados correctamente','alert-success')
         else:
-            #return render_template('usuarios.html',data2=data2, message="El usuario ya existe")
             flash('Error al guardar los datos','alert-danger')
     return redirect(url_for('listar_productos'))
 
@@ -324,13 +359,19 @@ def delete_producto(id):
 @app.route('/update_producto/<string:codigo>', methods=['POST'])
 def update_producto(codigo):
     producto= request.form['txtProducto']
+    stock= request.form['txtStock']
+    stockminimo= request.form['txtStockMinimo']
+    if stock > stockminimo:
+        estado="Ok"
+    else:
+        estado="Insuficiente"
     tipo= request.form['cboTipo']
-    if producto and tipo:
+    if producto and stock and stockminimo and estado and tipo:
         cursor = conexion.connection.cursor()
-        sql = "UPDATE producto SET nombre=%s, codigoTipo=%s where codigo=%s"
+        sql = "UPDATE producto SET nombre=%s, stock=%s, stock_min=%s, estado=%s, codigoTipo=%s where codigo=%s"
         #si no se pone codigo da error
         #si sepone codigo al inicio no da error pero no hace el update
-        data=(producto,tipo,codigo)#se pone el codigo en ese orden ya que el codigo se usa en la consulta
+        data=(producto,stock,stockminimo,estado,tipo,codigo)#se pone el codigo en ese orden ya que el codigo se usa en la consulta
         cursor.execute(sql, data)
         conexion.connection.commit()
         flash('Datos actualizados correctamente','alert-success')
@@ -484,19 +525,38 @@ def mostrar_imagen(id):
     else:
         return "Imagen no encontrada", 404
 
+#funcion para exportar
+@app.route('/download', methods=['POST'])
+def download():
+    data = request.form.get('table_data')
+    current_date = datetime.now().strftime("%Y%m%d")
+    file_name = f"csv_{current_date}.csv"
+    file_path = request.form.get('file_path', '/descargas/')
+    full_path = os.path.join(file_path, file_name)
 
-'''
-#decoradores
-@app.before_request
-def before_request():
-    print("Antes de la petición...")
-
-
-@app.after_request
-def after_request(response):
-    print("Después de la petición")
+    csv_data = data.split('\n')
+    response = Response(
+        '\n'.join(csv_data),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment;filename={file_name}'}
+    )
     return response
-'''
+
+#para importar, tiene que ser un upload diferente para cada tabla
+@app.route('/uploadProductos', methods=['POST'])
+def upload_file():
+    file = request.files['file']
+    if file:
+        data = pd.read_csv(file)
+
+        cursor = conexion.connection.cursor()
+        for i, row in data.iterrows():
+            sql = "INSERT INTO producto(nombre, stock, stock_min, estado, codigoTipo) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(sql, tuple(row))
+        conexion.connection.commit()
+        return 'Datos importados exitosamente'
+    return redirect(url_for('listar_productos'))
+
 
  #url personalizada
 @app.route('/contacto/<nombre>/<int:edad>') #nombre debe ser = nombre

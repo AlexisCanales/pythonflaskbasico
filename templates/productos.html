@@ -24,7 +24,7 @@
           <a href="{{url_for('listar_empleados')}}" class="navbar-brand">Empleados</a>
         </li>
       </ul>
-      <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} </label>
+      <i class="fas fa-user navbar-brand"> : </i><label class="navbar-brand"> {{session['usuario']}} / Tipo:</label> <label id="tipoUsuario" class="navbar-brand">{{session['tipo']}}</label>
       <a href="{{url_for('logout')}}" class="navbar-brand text-decoration-none"> Salir <i class="fa-solid fa-rectangle-xmark"></i></a>
     </div>
   </div>
@@ -78,11 +78,19 @@
       <div class="card-body">
         <form method="post" action="/guardar_producto">
           <div class="mb-3">
-            <label for="exampleFormControlInput1" class="form-label textwhite">producto:</label>
+            <label for="exampleFormControlInput1" class="form-label">producto:</label>
             <input type="text" class="form-control" id="txtProducto" name="txtProducto" placeholder="Producto" required="">
           </div>
           <div class="mb-3">
-            <label for="exampleFormControlInput1" class="form-label textwhite">tipo:</label>
+            <label for="exampleFormControlInput1" class="form-label">stock:</label>
+            <input type="text" class="form-control" id="txtStock" name="txtStock" placeholder="stock" required="">
+          </div>
+          <div class="mb-3">
+            <label for="exampleFormControlInput1" class="form-label">stock minimo:</label>
+            <input type="text" class="form-control" id="txtStockMinimo" name="txtStockMinimo" placeholder="stock minimo" required="">
+          </div>
+          <div class="mb-3">
+            <label for="exampleFormControlInput1" class="form-label">tipo:</label>
             <select name="cboTipo" id="cboTipo" class="form-select">
               <option selected>Seleccione</option>
               {% for dcbo in datacbo %}
@@ -92,7 +100,7 @@
           </div>
           <div class="mb-3">
             <div class="d-grid gap-2">
-              <input type="submit" id="btnenviar" name="btnenviar" value="Guardar" class="btn btn-lg btn-primary">
+              <input type="submit" id="btnenviar" name="btnenviar" value="Guardar" class="btn btn-lg btn-primary" {% if session['tipo'] == 'Invitado' %}disabled{% endif %}>
             </div>
           </div>
         </form>
@@ -101,24 +109,44 @@
 
     <div class="col-md-1"></div>
 
-    <div id="tabla" class="col-md-8">
-      <table class="table table-hover">
-        <tr>
-          <th>#</th>
-          <th><a href="{{url_for('ordenar_producto', ord='codigo')}}">Codigo</a></th>
-          <th><a href="{{url_for('ordenar_producto', ord='nombre')}}">Producto</a></th>
-          <th>Tipo</th>
-          <th>Editar</th>
-          <th>Eliminar</th>
-        </tr>
+    <div id="divtabla" class="col-md-8">
+      <table id="tabla" class="table table-hover">
+        <thead>
+          <form method="post" action="/download">
+            <input type="hidden" name="table_data" id="table_data">
+            <button type="submit" id="btnExport" class="btn btn-outline-success" onclick="prepareData()"> Exportar CSV <i class="fa-solid fa-file-export"></i></button>
+          </form>
+          <form method="post" action="/uploadProductos" enctype="multipart/form-data">
+            <input type="file" name="file" class="btn">
+            <button type="submit" id="btnImport" class="btn btn-outline-success"> Importar CSV <i class="fa-solid fa-file-import"></i></button>
+        </form>
+          <tr>
+            <th>#</th>
+            <th><a href="{{url_for('ordenar_producto', ord='codigo')}}">Codigo</a></th>
+            <th><a href="{{url_for('ordenar_producto', ord='nombre')}}">Producto</a></th>
+            <th>Stock</th>
+            <th>Stock minimo</th>
+            <th>Estado</th>
+            <th>Tipo</th>
+            <th>Editar</th>
+            <th>Eliminar</th>
+          </tr>
+        </thead>
         {% for d in data %}
         <tr>
           <td>{{loop.index}}</td>
           <td>{{d.codigo}}</td>
-          <td>{{d.nombre}}</td>
+          <td>{{d.nombre}}</td>     
+          <td>{{d.stock}}</td>  
+          <td>{{d.stock_min}}</td>
+          {% if d.stock > d.stock_min %}
+            <td class="bg-success-subtle">{{ d.estado }}</td>
+          {% else %}
+            <td class="bg-danger-subtle">{{ d.estado }}</td>
+          {% endif %}  
           <td>{{d.tipo}}</td>
-          <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}">Edit</button></td>
-          <td><a href="{{url_for('delete_producto', id=d.codigo)}}" class="btn btn-danger">Delete</a></td>
+          <td><button type="button" class="btn btn-success" id="btn-edit{{d.codigo}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo}}" {% if session['tipo'] == 'Invitado' %}disabled{% endif %}>Edit</button></td>
+          <td><a href="{{url_for('delete_producto', id=d.codigo)}}" class="btn btn-danger" {% if session['tipo'] == 'Invitado' %} style="pointer-events: none;"{% endif %}>Delete</a></td>
         </tr>
 
         <div class="modal" tabindex="-1" id="modal{{d.codigo}}">
@@ -131,11 +159,19 @@
               <div class="modal-body">
                 <form action="/update_producto/{{d.codigo}}" method="post">
                   <div class="mb-3">
-                    <label for="exampleFormControlInput1" class="form-label textwhite">producto:</label>
+                    <label for="exampleFormControlInput1" class="form-label">producto:</label>
                     <input type="text" class="form-control" id="txtProducto" name="txtProducto" required="" value="{{d.nombre}}">
                   </div>
                   <div class="mb-3">
-                    <label for="exampleFormControlInput1" class="form-label textwhite">Tipo:</label>
+                    <label for="exampleFormControlInput1" class="form-label">Stock:</label>
+                    <input type="text" class="form-control" id="txtStock" name="txtStock" required="" value="{{d.stock}}">
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label">Stock minimo:</label>
+                    <input type="text" class="form-control" id="txtStockMinimo" name="txtStockMinimo" required="" value="{{d.stock_min}}">
+                  </div>
+                  <div class="mb-3">
+                    <label for="exampleFormControlInput1" class="form-label">Tipo:</label>
                     <select name="cboTipo" id="cboTipo" class="form-select">
                       {% for dcbo in datacbo %}
                       <option value="{{dcbo.codigoTipo}}" {% if dcbo.nombre == d.tipo %}selected{% endif %}>{{dcbo.nombre}}</option>
